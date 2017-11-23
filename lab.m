@@ -41,6 +41,3 @@ Y = mean(Vhot./Vwarm);
 
 Trec = (Thot_avg - Y.*Twarm_avg)/(Y-1);
 
-figure
-plot(Trec)
-
