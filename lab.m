@@ -1,3 +1,5 @@
+%% Lab 1
+
 Elevation = [90 85 80 75 70 65 60 57.5 55 52.5 50 ...
     47.5 45 42.5 40 37.5 35 32.5 30];
 Vant = [1.785 1.802 1.808 1.807 1.808 1.809 1.819 1.799 1.799 1.804 1.803 1.804 1.806 1.808 1.810 1.812 1.815 1.822 1.828];
@@ -41,3 +43,23 @@ Y = mean(Vhot./Vwarm);
 
 Trec = (Thot_avg - Y.*Twarm_avg)/(Y-1);
 
+%% Lab 2
+
+AZ_offset_max_on_sun = (-12:1:12);
+EL_offset_max_on_sun = 0;
+Measured_power_max_on_sun = [254.3 259.4 263.5 260.4 260.4 254.3 254.3 287.0 348.5 441.5 507.1 564.3 553.6 531.0 ...
+                                458.3 372.1 318.9 275.7 263.0 262.0 271.0 276.7 271.7 266.1 262.9];
+
+AZ_offset_zero_line = (-70:1:-60);
+EL_offset_zero_line = 20;
+Measured_power_zero_line = [227.7 236.7 232.2 234.9 233.9 187.4 233.8 241.6 236.3 232.4 231.1];
+
+
+plot(AZ_offset_max_on_sun,Measured_power_max_on_sun);
+title('Maximized on the sun')
+xlabel('Azimuth [degrees]'); ylabel("Measured power [dB?]")
+
+figure
+plot(AZ_offset_zero_line,Measured_power_zero_line);
+xlabel('Azimuth [degrees]'); ylabel("Measured power [dB?]")
+title('Zero line')
