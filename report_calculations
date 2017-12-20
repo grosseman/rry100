@@ -1,0 +1,98 @@
+%% Elevation calculations
+
+lat = [9 51.507351 -55.983333];     % 1: Panama, 2: London, 3: Cape Horn
+lon = [-79 -0.127758 -67.266667];
+index = 1; 
+
+Ls = 0; % satellite latitude
+ls = -34;% satellite longitude
+
+re = 6371;
+rs = 42168.17;
+
+cosy =@(Le,le,Ls,ls) cos(deg2rad(Le))*cos(deg2rad(Ls))*cos(deg2rad(ls-le)) + sin(deg2rad(Le))*sin(deg2rad(Ls));
+
+
+cos_y = cosy(lat(index),lon(index),Ls,ls);
+
+
+y = acos(cos_y);
+
+cosEl = sin(y) / sqrt( 1 + (re/rs).^2 - 2*(re/rs)*cos_y );
+
+El = rad2deg(acos(cosEl));
+
+
+%% Prediction of attenuation statistics for an average year
+clc
+
+hS = 0;         % height above sea level
+theta = deg2rad(El);  % elevation angle
+phi = lat(index);      % latitude of earth station
+f = 13;       % frequency (GHz)
+Re = 8500;      % effective radius of earth
+h0 = 2.53;      % 0 degree isotherm rain height
+%h0 = 5;
+
+if f == 12
+    k = [0.0188 0.0168];      %
+    alpha = [1.217 1.200];    % k & a for 13 GHz    
+else
+    k = [0.03041 0.03266];      %
+    alpha = [1.1586 1.0901];    % k & a for 13 GHz
+end
+
+% Step 1 -- determine rain height
+hR = h0 + 0.36;
+
+% Step 2 -- compute slant-path length 
+Ls = (hR-hS) / sin(theta);
+
+% Step 3 -- calculate horizontal projection
+Lg = Ls * cos(theta);
+
+% Step 4 -- R001 rainfall rate
+R001 = [145 78 42]; % 0.01% RR
+
+% Step 5 -- specific attenuation
+t = pi/4;   % 45 degrees -- circular pol
+K = (k(1)+k(2)+(k(1)-k(2))*cos(theta)^2*cos(2*t))/2;
+A = (k(1)*alpha(1)+k(2)*alpha(2)+(k(1)*alpha(1)-k(2)*alpha(2))*cos(theta)^2*cos(2*t))/(2*K);
+
+gammaR = K * (R001(index)).^(A);
+
+% Step 6 -- horizontal reduction factor
+
+r001 = 1 / ( 1 + 0.78*sqrt( (Lg*gammaR) / f) - 0.38*(1-exp(-2*Lg)));
+
+% Step 7 -- vertical adjustment factor
+zeta = atan( (hR - hS)/(Lg * r001) );   % rad
+
+if zeta > theta
+    Lr = (Lg*r001) / cos(theta);
+else
+    Lr = (hR - hS) / sin(theta);
+end
+
+if abs(phi) < 36
+    chi = 36 - abs(phi);
+else
+    chi = 0;
+end
+
+v001 = 1 / ( 1 + sqrt(sin(theta)) * (31 * (1-exp(-(El/(1+chi)))) * (sqrt(Lr*gammaR)/(f^2)) -0.45));
+
+% Step 8 -- effective path length
+Le = Lr*v001;
+% Step 9 -- attenuation
+Att_001 = gammaR * Le;
+
+% Step 10 -- adapt to 0.001%
+
+if abs(phi) < 36 && rad2deg(theta) >= 25
+    beta = -0.005*(abs(phi)-36);
+else
+    beta = -0.005*(abs(phi)-36) + 1.8-4.25*sin(theta);
+end
+
+Att_0001 = Att_001 * (0.001/0.01)^(-(0.655 + 0.033*log(0.001)-0.045*log(Att_001)-beta*(1-0.001)*sin(theta)));
